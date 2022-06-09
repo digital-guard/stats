@@ -1,6 +1,7 @@
 ---
-title: "Relatório estatístico"
+title: "Relatório interno"
 author: "data@addressforall.org"
+date: 2022-06-09
 format:
    html:
      self-contained: true

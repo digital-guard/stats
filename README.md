@@ -1,7 +1,7 @@
 # Organização
 
-docs: onde os relatórios estão armazenados
+docs:
 
-- [Relatório estatístico]()
+- [Relatório estatístico](https://digital-guard.github.io/stats/docs/stats-report)
 
-- [Relatório interno]()
+- [Relatório interno](https://digital-guard.github.io/stats/docs/internal-report)
