@@ -1,5 +1,5 @@
 ---
-title: "Digital Guard - Diagnóstico 'Operação'"
+title: "Digital Guard - 'Operação'"
 author: "data@addressforall.org"
 date: today
 date-format: "DD/MM/YYYY"
@@ -20,6 +20,7 @@ library(tidyverse) #data manipulation
 library(leaflet) #interactive maps
 library(rbokeh) #interactive plots
 library(DT) #interactive tables
+
 library(knitr) #print regular tables
 
 # download data
@@ -82,7 +83,7 @@ donatedPack_meta <- tibble(variable = names(donatedPack),
 
 ```
 
-# Manual preservação (Operação)
+# Manual preservação
 
 1)  Sempre que um novo doador entrar em contato com o instituto, adicioná-lo à [base de doadores](#donor.csv). Nessa etapa será atribuido um identificador único, o [donor_id](#local_id-e-donor_id).
 
