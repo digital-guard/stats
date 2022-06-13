@@ -1,7 +1,8 @@
 ---
-title: "Relatório interno"
+title: "Digital Guard - Diagnóstico 'Operação'"
 author: "data@addressforall.org"
-date: 2022-06-09
+date: today
+date-format: "DD/MM/YYYY"
 format:
    html:
      self-contained: true
@@ -12,56 +13,21 @@ execute:
 ---
 
 ```{r}
-library(knitr)
-library(readr)
-library(tidyverse)
+# open packages
+library(readr) #download and open csv
+library(tidyverse) #data manipulation
 
+library(leaflet) #interactive maps
+library(rbokeh) #interactive plots
+library(DT) #interactive tables
+library(knitr) #print regular tables
+
+# download data
 donor <- read_csv("https://raw.githubusercontent.com/digital-guard/preserv-BR/main/data/donor.csv")
 donatedPack <- read_csv("https://raw.githubusercontent.com/digital-guard/preserv-BR/main/data/donatedPack.csv")
 volume <- read_csv2("https://addressforall.org/luis.csv")
-```
 
-# Manual preservação (Operação)
-
-1) Sempre que um novo doador entrar em contato com o instituto, adicioná-lo à [planilha de doadores](#donor.csv). Nessa etapa será atribuido um identificador único, o [donor_id](#local_id-e-donor_id). Os dados coletados virão a integrar a [dashboard](#dashboard).
-
-2) Realizar análise de cada pacote de dados recebido. Aceitar apenas [dados geoespaciais](#escrever-sobre-dados-geoespaciais---blog) ou dados que possam ser facilmente [georreferenciados](#escrever-sobre-georreferenciamento-e-geocodificação---blog). O [dicionário de dados](https://github.com/digital-guard/preserv/blob/main/docs/pt/ftypes.md) descreve os tipos de arquivo que podem ser adicionados à preservação atualmente.
-
-3) Após recebimento dos dados, preencher a [planilha de pacotes doados](#donatedpack.csv).
-
-4) [Manual sha256sum](#manual-sha256sum). Subir os arquivos para o servidor da preservação.
-
-5) [Manual README](#manual-readme). Para filtragem dos dados.
-
-6) [Manual yaml](#manual-yaml) Para filtragem dos dados.
-
-7) ...
-
-# Análise dos dados
-
-As informações sobre status do doador/pacote é incompatível entre as planilhas do Thierry, do GitHub e das análises feitas pelo Carlos, Gabriel e Luis. Estou combinando essas análises para atualizar o status de cada doador, conforme as categorias:
-
-- **Dados completos**: doação efetivada e já disponível no servidor.
-
-- **Dados incompletos**: partindo da interpretação que dados completos são *pontos ou polígonos de endereço com nome de logradouro e número de porta*, entram nessa categoria os doadores com doação efetivada e já está disponível no servidor, mas sem dados de endereço completos. Nesses casos, precisamos monitorar os doadores para conferir se novos dados (completos) estão disponíveis. Em outros casos, o Instituto pode desenvolver algoritmos específicos para integrar esses dados na plataforma (casos de endereços com número de porta e sem nome de logradouro, por exemplo).
-
-- **Dados em análise**: essa categoria não deveria existir. Refere-se aos pacotes de dados que recebemos, mas ainda não foram para o servidor (falta sha256sum, README e/ou yaml). Quando terminarmos o multirão de análise de dados (Luis e Carlos), todos esses doadores passarão para outra categoria (se tivermos sorte, dados completos).
-
-- **Prospecção em andamento**: estamos aguardando o recebimento dos dados para análise.
-
-- **Prospecção parada**: por algum motivo, pausamos o contato com o doador sem receber pacote de dados (estão em processo de construção dos dados, não possuem dados etc.).
-
-- **Dados inutilizáveis**: doação efetivada, mas o servidor não suporta esse tipo de dado. São os casos em que recebemos AutoCAD, por exemplo. O Igor costumava adicionar esse tipo de dado na planilha de pacotes doados, mas desde que entrei no instituto fui instruído a aceitar apenas [dados geoespaciais](#escrever-sobre-dados-geoespaciais---blog), fazendo essa categoria cair em desuso. Os doadores nessa categoria devem ser analisados caso a caso e movidos para outra categoria.
-
-# Planilhas
-
-## donor.csv
-
-Planilha de doadores [publicada no GitHub](https://github.com/digital-guard/preserv-BR/blob/main/data/donor.csv). Essa planilha pode ser preenchida por meio de um formulário - diminui as chances de erros/inconsistências, atribuição automática de donor_id e torna a coleta da data automática.
-
-### Dicionário donor.csv
-
-```{r}
+# create data
 donor_meta <- tibble(variable = names(donor),
                      description = c("donor id",
                                      "donor jurisdiction",
@@ -70,26 +36,12 @@ donor_meta <- tibble(variable = names(donor),
                                      "donor legal name",
                                      "donor wikidata id",
                                      "donor url"))
-kable(donor_meta)
-```
 
-Novas variáveis:
-
-```{r}
 donor_meta2 <- tibble(variable = c("donor_date",
                                    "donor_type"),
                       description = c("date the donor first contacted the institute",
                                       "1 = government, 2 = association, 3 = research institute, 4 = public company, 5 = private company, 6 = other"))
-kable(donor_meta2)
-```
 
-## donatedPack.csv
-
-Planilha de pacotes doados [publicada no GitHub](https://github.com/digital-guard/preserv-BR/blob/main/data/donatedPack.csv). Essa planilha também pode ser preenchida utilizando um formulário. Essa planilha pode se beneficiar de uma revisão detalhada.
-
-### Dicionário donatedPack.csv
-
-```{r}
 donatedPack_meta <- tibble(variable = names(donatedPack),
                            description = c("package id",
                                            "donor id, from donor.csv",
@@ -127,22 +79,109 @@ donatedPack_meta <- tibble(variable = names(donatedPack),
                                         "irrelevant?",
                                         "not in use",
                                         "not in use"))
+
+```
+
+# Manual preservação (Operação)
+
+1)  Sempre que um novo doador entrar em contato com o instituto, adicioná-lo à [base de doadores](#donor.csv). Nessa etapa será atribuido um identificador único, o [donor_id](#local_id-e-donor_id).
+
+2)  Realizar análise de cada pacote de dados recebido. Aceitar apenas [dados geoespaciais](#escrever-sobre-dados-geoespaciais---blog) ou dados que possam ser facilmente [geocodificados](#escrever-sobre-georreferenciamento-e-geocodificação---blog). O [dicionário de dados](https://github.com/digital-guard/preserv/blob/main/docs/pt/ftypes.md) descreve os tipos de arquivo que são aceitos na preservação atualmente.
+
+3)  Após aceite do pacote de dados, preencher a [base de pacotes doados](#donatedpack.csv).
+
+4)  [Manual sha256sum](#manual-sha256sum)
+
+5)  [Manual README](#manual-readme)
+
+6)  [Manual yaml](#manual-yaml)
+
+7)  ...
+
+# Análise dos dados
+
+As informações sobre status do doador/pacote é incompatível entre as planilhas do Thierry, do GitHub e das análises feitas pelo Carlos, Gabriel e Luis. Estou combinando essas análises para atualizar o status de cada doador, conforme as categorias:
+
+-   **Dados completos**: doação efetivada e já disponível no servidor.
+
+-   **Dados incompletos**: partindo da interpretação que dados completos são *pontos ou polígonos de endereço com nome de logradouro e número de porta*, entram nessa categoria os doadores com doação efetivada e já está disponível no servidor, mas sem dados de endereço completos. Nesses casos, precisamos monitorar os doadores para conferir se novos dados (completos) estão disponíveis. Em casos específicos, o Instituto pode desenvolver algoritmos específicos para integrar esses dados na plataforma (casos de endereços com número de porta e sem nome de logradouro, por exemplo).
+
+-   **Dados em análise**: essa categoria não deveria existir. Refere-se aos pacotes de dados que recebemos, mas ainda não foram para o servidor (falta sha256sum, README e/ou yaml). Quando terminarmos o multirão de análise de dados (Luis e Carlos), todos esses doadores passarão para outra categoria (e se tivermos sorte, todos para dados completos).
+
+-   **Prospecção em andamento**: estamos aguardando o recebimento dos dados para análise.
+
+-   **Prospecção parada**: por algum motivo, pausamos o contato com o doador sem receber pacote de dados (estão em processo de construção do cadastro multifinalitário, não possuem dados etc.).
+
+-   **Dados inutilizáveis**: doação efetivada, mas o servidor não suporta esse tipo de dado. São os casos em que recebemos AutoCAD, por exemplo. O Igor costumava adicionar esse tipo de dado na planilha de pacotes doados, mas desde que entrei no instituto fui instruído a aceitar apenas [dados geoespaciais](#escrever-sobre-dados-geoespaciais---blog), fazendo essa categoria cair em desuso. Os doadores nessa categoria devem ser analisados caso a caso e movidos para outra categoria (prospecção).
+
+# Planilhas
+
+## donor.csv {#donor.csv}
+
+Planilha de doadores [publicada no GitHub](https://github.com/digital-guard/preserv-BR/blob/main/data/donor.csv). Essa planilha pode ser preenchida por meio de um formulário - diminui as chances de erros/inconsistências, atribuição automática de donor_id e torna a coleta da data automática.
+
+```{r}
+#| column: page
+
+datatable(donor, 
+          class = 'compact hover nowrap order-column row-border', 
+          rownames = FALSE,
+          filter = "top")
+```
+
+### Dicionário donor.csv
+
+```{r}
+kable(donor_meta)
+```
+
+Novas variáveis:
+
+```{r}
+kable(donor_meta2)
+```
+
+## donatedPack.csv {#donatedpack.csv}
+
+Planilha de pacotes doados [publicada no GitHub](https://github.com/digital-guard/preserv-BR/blob/main/data/donatedPack.csv). Essa planilha também pode ser preenchida utilizando um formulário. Essa planilha pode se beneficiar de uma revisão detalhada.
+
+```{r}
+#| column: page
+
+datatable(donatedPack, 
+          class = 'compact hover nowrap order-column row-border', 
+          rownames = FALSE,
+          filter = "top")
+```
+
+### Dicionário donatedPack.csv
+
+```{r}
 kable(donatedPack_meta)
 ```
 
 ## Planilha Volumetria
 
-[Disponível aqui](addressforall.org/luis.csv)
+[Download disponível aqui](addressforall.org/luis.csv).
 
-a) Dar um nome definitivo à planilha
+```{r}
+#| column: page
 
-b) Preparar dicionário de dados
+datatable(volume, 
+          class = 'compact hover nowrap order-column row-border', 
+          rownames = FALSE,
+          filter = "top")
+```
 
-c) Automatizar geração da planilha ou gerar sob demanda (Claiton)
+a)  Dar um nome definitivo à planilha
+
+b)  Preparar dicionário de dados
+
+c)  Discutir se vamos automatizar a atualização da planilha ou gerar sob demanda
 
 # Questões
 
-### 1. local_id e donor_id
+### 1. local_id e donor_id {#local_id-e-donor_id}
 
 Na planilha de doadores, o nome dessa variável é local_id. Em todas as outras planilhas é donor_id. Isso acontece por algum motivo específico? Podemos aproveitar a revisão das planilhas para uniformizar os nomes. Algo similar acontece com outras variáveis: shortName vs donor_label, scope vs scope_label.
 
@@ -152,62 +191,22 @@ Atualmente, o upload dos dados é baseado em pacotes. Isso não conversa com as 
 
 # Novas empreitadas
 
-### 1) Escrever sobre dados geoespaciais - blog
+### 1) Escrever sobre dados geoespaciais - blog {#escrever-sobre-dados-geoespaciais---blog}
 
-### 2) Escrever sobre georreferenciamento e geocodificação - blog
+### 2) Escrever sobre georreferenciamento e geocodificação - blog {#escrever-sobre-georreferenciamento-e-geocodificação---blog}
 
-### 3) Escrever sobre dados abertos (e tipos de licença) - blog
+### 3) Escrever sobre geoendereço (geoaddress) - blog
 
-### 4) Manual sha256sum
+### 4) Escrever sobre dados abertos (e tipos de licença) - blog
+
+### 5) Manual sha256sum {#manual-sha256sum}
 
 Primeira versão [publicada no GitHub](https://github.com/digital-guard/preserv/blob/main/docs/pt/man-sha256.md). Precisamos discutir possível automatização de etapas (também utilizando formulário).
 
-### 5) Manual README
+### 6) Manual README {#manual-readme}
 
-Revisar modelo do README e escrever manual para preenchimento do README.
+Revisar modelo do README e escrever manual para preenchimento do README, que também poderia ser feito utilizando formulário.
 
-### 6) Manual yaml
+### 7) Manual yaml {#manual-yaml}
 
-Escrever manual yaml (Carlos).
-
-### 7) Dashboard
-
-Definir tecnologia (shiny, flexdashboard, outro) e indicadores.
-
-Outline em construção:
-
-a) Prospecção
-
-- Evolução da quantidade de doadores + status dos doadores
-
-```{r}
-
-```
-
-- Tempo médio entre o primeiro contato e doação do pacote (indicador interno)
-
-```{r}
-
-```
-
-- Categoria dos doadores
-
-```{r}
-
-```
-
-b) Dados preservados
-
-- Evolução da quantidade de [pacotes ou arquivos]().
-
-- Filtros: por jurisdição, se possui licença (explícita ou implícita), tipo da licença (aberta ou limitada), formato do arquivo (csv, excel, geopackage, geojson, shapefile etc.), tipo do arquivo (geoaddress, parcel etc.).
-
-c) Dados filtrados
-
-- Evolução da quantidade de endereços. + quantidade de km de vias + quantidade de edificações, quadras, bairros...
-
-- Filtros: por jurisdição, se possui licença (explícita ou implícita), tipo da licença (aberta ou limitada).
-
-d) Dados consolidados
-
-- Ainda não está em operação. Explorar projetos piloto - Brasil e Colômbia.
+Escrever manual yaml.
