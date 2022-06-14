@@ -26,7 +26,7 @@ library(knitr) #print regular tables
 # download data
 donor <- read_csv("https://raw.githubusercontent.com/digital-guard/preserv-BR/main/data/donor.csv")
 donatedPack <- read_csv("https://raw.githubusercontent.com/digital-guard/preserv-BR/main/data/donatedPack.csv")
-volume <- read_csv2("https://addressforall.org/luis.csv")
+volume <- read_csv2("https://addressforall.org/luisv2.csv")
 
 # create data
 donor_meta <- tibble(variable = names(donor),
@@ -202,12 +202,10 @@ Atualmente, o upload dos dados é baseado em pacotes. Isso não conversa com as 
 
 ### 5) Manual sha256sum {#manual-sha256sum}
 
-Primeira versão [publicada no GitHub](https://github.com/digital-guard/preserv/blob/main/docs/pt/man-sha256.md). Precisamos discutir possível automatização de etapas (também utilizando formulário).
+Primeira versão [publicada no GitHub](https://github.com/digital-guard/preserv/blob/main/docs/pt/man-sha256.md). 
 
 ### 6) Manual README {#manual-readme}
 
-Revisar modelo do README e escrever manual para preenchimento do README, que também poderia ser feito utilizando formulário.
+Revisar modelo do README e escrever manual para preenchimento do README.
 
 ### 7) Manual yaml {#manual-yaml}
-
-Escrever manual yaml.
