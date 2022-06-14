@@ -29,17 +29,24 @@ library(rnaturalearth) #downloads one shapefile - this dependency can be removed
 
 # download data
 donor <- read_csv("https://raw.githubusercontent.com/digital-guard/preserv-BR/main/data/donor.csv")
+
 donatedPack <- read_csv("https://raw.githubusercontent.com/digital-guard/preserv-BR/main/data/donatedPack.csv")
-volume <- read_csv2("https://addressforall.org/luisv2.csv")
+
+volume <- read_csv2("https://addressforall.org/luisv2.csv") %>%
+  mutate(license_family = case_when(license %in% c("CC0", "CC0,(lei municipal)", "CC0; (non-standard)") ~ "CC0",
+                                    license %in% c("CC-BY") ~ "CC-BY",
+                                    license %in% c("ODbL") ~ "CC-BY-SA"),
+         license_type = if_else(license_is_explicit == "yes", "explicit", "implicit"))
 
 # temporary files
 iso <- c("ARG", "BRA", "CHL", "COL", "ECU", "PER", "URY", "VEN")
+
 aoi <- ne_countries(return = 'sf') %>% filter(iso_a3 %in% iso)
 ```
 
 Os endereços são parte fundamental da infraestrutura física-territorial de um país. Eles são essenciais para a provisão de serviços básicos (eletricidade, água, correio), no planejamento e implementação de políticas públicas e no desenvolvimento do setor privado.
 
-O Instituto AddressForAll já atua em `r length(iso)` países da América Latina por meio do Projeto Digital Guard. `r length(unique(volume$donor_id))` parceiros já contribuíram para a plataforma de dados.
+O Instituto AddressForAll já atua em **`r length(iso)` países** da América Latina por meio do Projeto Digital Guard. **`r length(unique(volume$donor_id))` doadores** contribuíram para a plataforma de dados.
 
 ```{r}
 # mapa da área de atuação
@@ -57,21 +64,52 @@ leaflet() %>%
 
 ```
 
-## Preservação
+# Documentos de referência
 
-`r length(volume$pack_id)` arquivos já foram preservados, organizados em `r length(unique(volume$pack_id))` pacotes de dados.
+Após recebimento dos dados, eles são publicados em [três formatos/estágios](http://addressforall.org/dados):
+
+- Dados preservados
+
+- Dados filtrados
+
+- Dados consolidados
+
+O [dicionário de dados](https://github.com/digital-guard/preserv/blob/main/docs/pt/ftypes.md) descreve quais tipos de layer são adicionadas à plataforma de dados atualmente.
+
+<p><i>Layers</i> contendo o endereço:
+<ul style="list-style-type:none;" dir="auto">
+<li><img src="https://raw.githubusercontent.com/digital-guard/preserv/main/docs/assets/layerIcon-geoaddress.png" align="middle" width="40" style="max-width: 100%;"> <strong>geoaddress</strong>: Geo-endereço. Representação geográfica do endereço, como ponto.</li>
+<li><img src="https://raw.githubusercontent.com/digital-guard/preserv/main/docs/assets/layerIcon-building.png" align="middle" width="40" style="max-width: 100%; padding-top: 6pt;"> <strong>building</strong>: Polígono de edificação.</li>
+<li><img src="https://raw.githubusercontent.com/digital-guard/preserv/main/docs/assets/layerIcon-parcel.png" align="middle" width="40" style="max-width: 100%; padding-top: 6pt;"> <strong>parcel</strong>: Polígono de lote (terreno).</li>
+</ul>
+</p>
+
+<p><i>Layers</i> de apoio e complementação dos dados de endereço:
+<ul style="list-style-type:none;" dir="auto">
+<li><img src="https://raw.githubusercontent.com/digital-guard/preserv/main/docs/assets/layerIcon-via.png" align="middle" width="40" style="max-width: 100%; padding-top: 6pt;"> <strong>via</strong>: Eixo de via. Logradouro representado por linha central, com nome oficial.</li>
+<li><img src="https://raw.githubusercontent.com/digital-guard/preserv/main/docs/assets/layerIcon-genericVia.png" align="middle" width="40" style="max-width: 100%; padding-top: 6pt;"> <strong>genericvia</strong>: Ferrovia, hidrovia ou outra "via generalizada" que ajude a delimitar quadras. </li>
+<li><img src="https://raw.githubusercontent.com/digital-guard/preserv/main/docs/assets/layerIcon-namedZone.png" align="middle" width="40" style="max-width: 100%; padding-top: 6pt;"> <strong>block</strong>: Quadras ou divisões poligonais similares.</li>
+<li><img src="https://raw.githubusercontent.com/digital-guard/preserv/main/docs/assets/layerIcon-namedZone.png" align="middle" width="40" style="max-width: 100%; padding-top: 6pt;"> <strong>nsvia</strong>: <em>NameSpace</em> para distinguir vias duplicadas, tipicamente bairro ou loteamento.</li>
+</ul>
+</p>
+
+A política de licenças adotada pelo Instituto foi detalhada [neste repositório](https://github.com/digital-guard/licenses).
+
+## Dados preservados
+
+**`r length(volume$pack_id)` layers** já foram preservados, recebidas de **`r length(unique(volume$legalname))` doadores**
 
 ```{r}
-ggplot(data = volume %>% group_by(ftname_class) %>% count() %>% mutate(col = if_else(ftname_class %in% c("geoaddress", "parcel"), TRUE, FALSE))) +
+ggplot(data = volume %>% group_by(ftname_class) %>% count() %>% mutate(col = if_else(ftname_class %in% c("building", "geoaddress", "parcel"), TRUE, FALSE))) +
   geom_col(aes(x = n, y = ftname_class, fill = col), show.legend = FALSE) +
-  scale_x_continuous(breaks = seq(0,26,2)) +
+  #scale_x_continuous(breaks = seq(0,,2)) +
   scale_y_discrete(limits=rev) +
   scale_fill_manual(values = c("gray75", "gray25")) +
-  xlab("Number of files") + ylab("Data type") +
+  xlab("Packages") + ylab("Layers") +
   theme_bw()
 ```
 
-```{r include = FALSE}
+```{r}
 volume %>%
   mutate(new_date = floor_date(accepted_date, unit = "month")) %>%
   group_by(new_date) %>%
@@ -82,43 +120,54 @@ volume %>%
   ggplot() +
   geom_area(aes(x = new_date, y = n, fill = "gray50"), show.legend = FALSE) +
   scale_fill_manual(values = c("gray50")) +
-  xlab("Date") + ylab("Number of files") +
+  xlab("Date") + ylab("Layers") +
   theme_bw()
 ```
 
-## Filtragem
+## Dados filtrados
 
-`r volume %>% filter(ftname %in% c("geoaddress_full", "parcel_full")) %>% summarize(sum(quantidade_feicoes_bruta)) %>% sum() %>% format(scientific = FALSE, big.mark = ".")` endereços completos, compartilhados por `r volume %>% filter(ftname %in% c("geoaddress_full", "parcel_full")) %>% group_by(legalname) %>% tally() %>% nrow()` doadores
+### Geoendereços
 
-`r volume %>% filter(ftname %in% c("geoaddress_full", "parcel_full") & license_is_explicit == "yes") %>% summarize(sum(quantidade_feicoes_bruta)) %>% sum() %>% format(scientific = FALSE, big.mark = ".")` endereços completos com licença explícita, compartilhados por `r volume %>% filter(ftname %in% c("geoaddress_full", "parcel_full") & license_is_explicit == "yes") %>% group_by(legalname) %>% tally() %>% nrow()` doadores
+**`r volume %>% filter(ftname %in% c("geoaddress_full", "parcel_full")) %>% summarize(sum(quantidade_feicoes_bruta)) %>% sum() %>% format(scientific = FALSE, big.mark = ".")` geoendereços**, compartilhados por **`r volume %>% filter(ftname %in% c("geoaddress_full", "parcel_full")) %>% group_by(legalname) %>% tally() %>% nrow()` doadores**
+
+**`r volume %>% filter(ftname %in% c("geoaddress_full", "parcel_full") & license_family == "CC0") %>% summarize(sum(quantidade_feicoes_bruta)) %>% sum() %>% format(scientific = FALSE, big.mark = ".")` geoendereços com licença da família CC0**, compartilhados por **`r volume %>% filter(ftname %in% c("geoaddress_full", "parcel_full") & license_family == "CC0") %>% group_by(legalname) %>% tally() %>% nrow()` doadores**
+
+**`r volume %>% filter(ftname %in% c("geoaddress_full", "parcel_full") & license_family == "CC0" & license_is_explicit == "yes") %>% summarize(sum(quantidade_feicoes_bruta)) %>% sum() %>% format(scientific = FALSE, big.mark = ".")` geoendereços com licença da família CC0 explícita**, compartilhados por **`r volume %>% filter(ftname %in% c("geoaddress_full", "parcel_full") & license_family == "CC0" & license_is_explicit == "yes") %>% group_by(legalname) %>% tally() %>% nrow()` doadores**
 
 ```{r}
 volume %>%
+  mutate(license2 = paste0(license_family, " (", license_type, ")")) %>%
   filter(ftname %in% c("geoaddress_full", "parcel_full")) %>%
-  mutate(`License type` = paste0(if_else(license_is_explicit == "yes", "Explicit - ", "Not explicit - "), `license`)) %>%
   group_by(legalname) %>%
   slice(1) %>%
   ungroup() %>%
-  group_by(`License type`) %>%
+  group_by(license2) %>%
   summarise(Donors = n(),
             Addresses = format(sum(quantidade_feicoes_bruta, na.rm = TRUE), big.mark = ".")) %>%
+  arrange(desc(license2)) %>%
+  rename("License family" = license2) %>%
   kable()
 ```
+
+## Dados consolidados
+
+Ainda não está em operação.
+
+## Pacotes doados para consulta - apenas dados completos/full (ver dicionário de dados)
 
 ```{r}
 #| column: page
 
 volume %>% 
-  filter(ftname %in% c("geoaddress_full", "parcel_full")) %>% #shortname != "OSM" & 
-  select(legalname, ftname_class, quantidade_feicoes_bruta, license_is_explicit, license) %>%
+  mutate(license_family = as_factor(license_family),
+         license_type = as_factor(license_type),
+         ftname_class = as_factor(ftname_class)) %>%
+  filter(grepl(pattern = "full", x = ftname)) %>%
+  select(scope, legalname, ftname_class, quantidade_feicoes_bruta, license_family, license_type) %>%
   mutate(quantidade_feicoes_bruta = format(quantidade_feicoes_bruta, big.mark = ".")) %>%
-  setNames(c("Donor name", "Type", "Number of addresses", "License is explicit?", "License type")) %>%
-  arrange(`Donor name`) %>%
+  setNames(c("Jurisdiction", "Donor", "Layer", "# of features", "License family", "License type")) %>%
+  arrange(`Jurisdiction`) %>%
   datatable(class = 'compact hover nowrap order-column row-border', 
           rownames = FALSE,
           filter = "top")
 ```
-
-## Consolidação
-
-Ainda não está em operação.
