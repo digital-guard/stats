@@ -23,8 +23,9 @@ library(sf) #geospatial data support and manipulation
 library(leaflet) #interactive maps
 library(rbokeh) #interactive plots
 library(DT) #interactive tables
+library(knitr) #print regular tables
 
-library(rnaturalearth) #downloads one shapefile - this dependency can be removed by download data from github rep
+library(rnaturalearth) #downloads one shapefile - this dependency can be removed by downloading data from another directory
 
 # download data
 donor <- read_csv("https://raw.githubusercontent.com/digital-guard/preserv-BR/main/data/donor.csv")
@@ -58,7 +59,7 @@ leaflet() %>%
 
 ## Preservação
 
-`r length(volume$pack_id)` arquivos já foram preservados, organizados em `r length(unique(volume$pack_id))`` pacotes de dados.
+`r length(volume$pack_id)` arquivos já foram preservados, organizados em `r length(unique(volume$pack_id))` pacotes de dados.
 
 ```{r}
 ggplot(data = volume %>% group_by(ftname_class) %>% count() %>% mutate(col = if_else(ftname_class %in% c("geoaddress", "parcel"), TRUE, FALSE))) +
@@ -87,20 +88,31 @@ volume %>%
 
 ## Filtragem
 
-`r volume %>% filter(ftname %in% c("geoaddress_full", "parcel_full")) %>% summarize(sum(quantidade_feicoes_bruta)) %>% sum() %>% format(scientific = FALSE, big.mark = ".")` endereços completos, compartilhados por `r volume %>% filter(ftname %in% c("geoaddress_full", "parcel_full")) %>% group_by(legalname) %>% tally() %>% nrow()` parceiros
+`r volume %>% filter(ftname %in% c("geoaddress_full", "parcel_full")) %>% summarize(sum(quantidade_feicoes_bruta)) %>% sum() %>% format(scientific = FALSE, big.mark = ".")` endereços completos, compartilhados por `r volume %>% filter(ftname %in% c("geoaddress_full", "parcel_full")) %>% group_by(legalname) %>% tally() %>% nrow()` doadores
 
-`r volume %>% filter(shortname != "OSM" & ftname %in% c("geoaddress_full", "parcel_full")) %>% summarize(sum(quantidade_feicoes_bruta)) %>% sum() %>% format(scientific = FALSE, big.mark = ".")` endereços completos com licença aberta, compartilhados por `r volume %>% filter(shortname != "OSM" & ftname %in% c("geoaddress_full", "parcel_full")) %>% group_by(legalname) %>% tally() %>% nrow()` parceiros
+`r volume %>% filter(ftname %in% c("geoaddress_full", "parcel_full") & license_is_explicit == "yes") %>% summarize(sum(quantidade_feicoes_bruta)) %>% sum() %>% format(scientific = FALSE, big.mark = ".")` endereços completos com licença explícita, compartilhados por `r volume %>% filter(ftname %in% c("geoaddress_full", "parcel_full") & license_is_explicit == "yes") %>% group_by(legalname) %>% tally() %>% nrow()` doadores
 
-`r volume %>% filter(shortname != "OSM" & ftname %in% c("geoaddress_full", "parcel_full") & license_is_explicit == "yes") %>% summarize(sum(quantidade_feicoes_bruta)) %>% sum() %>% format(scientific = FALSE, big.mark = ".")` endereços completos com licença aberta e explícita, compartilhados por `r volume %>% filter(shortname != "OSM" & ftname %in% c("geoaddress_full", "parcel_full") & license_is_explicit == "yes") %>% group_by(legalname) %>% tally() %>% nrow()` parceiros
+```{r}
+volume %>%
+  filter(ftname %in% c("geoaddress_full", "parcel_full")) %>%
+  mutate(`License type` = paste0(if_else(license_is_explicit == "yes", "Explicit - ", "Not explicit - "), `license`)) %>%
+  group_by(legalname) %>%
+  slice(1) %>%
+  ungroup() %>%
+  group_by(`License type`) %>%
+  summarise(Donors = n(),
+            Addresses = format(sum(quantidade_feicoes_bruta, na.rm = TRUE), big.mark = ".")) %>%
+  kable()
+```
 
 ```{r}
 #| column: page
 
 volume %>% 
   filter(ftname %in% c("geoaddress_full", "parcel_full")) %>% #shortname != "OSM" & 
-  select(legalname, ftname_class, quantidade_feicoes_bruta, license, license_is_explicit) %>%
+  select(legalname, ftname_class, quantidade_feicoes_bruta, license_is_explicit, license) %>%
   mutate(quantidade_feicoes_bruta = format(quantidade_feicoes_bruta, big.mark = ".")) %>%
-  setNames(c("Donor name", "Type", "Number of addresses", "License type", "License is explicit?")) %>%
+  setNames(c("Donor name", "Type", "Number of addresses", "License is explicit?", "License type")) %>%
   arrange(`Donor name`) %>%
   datatable(class = 'compact hover nowrap order-column row-border', 
           rownames = FALSE,
