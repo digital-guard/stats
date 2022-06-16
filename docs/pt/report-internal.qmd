@@ -20,7 +20,6 @@ library(tidyverse) #data manipulation
 library(leaflet) #interactive maps
 library(rbokeh) #interactive plots
 library(DT) #interactive tables
-
 library(knitr) #print regular tables
 
 # download data
