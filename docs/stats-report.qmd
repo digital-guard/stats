@@ -33,13 +33,14 @@ donor <- read_csv("https://raw.githubusercontent.com/digital-guard/preserv-BR/ma
 donatedPack <- read_csv("https://raw.githubusercontent.com/digital-guard/preserv-BR/main/data/donatedPack.csv")
 
 volume <- read_csv2("https://addressforall.org/luisv2.csv") %>%
+  filter(!ftname_class %in% c("address", "cadparcel", "cadvia")) %>%
   mutate(license_family = case_when(license %in% c("CC0", "CC0,(lei municipal)", "CC0; (non-standard)") ~ "CC0",
                                     license %in% c("CC-BY") ~ "CC-BY",
                                     license %in% c("ODbL") ~ "CC-BY-SA"),
          license_type = if_else(license_is_explicit == "yes", "explicit", "implicit"))
 
 # temporary files
-iso <- c("ARG", "BRA", "CHL", "COL", "ECU", "PER", "URY", "VEN")
+iso <- c("ARG", "BOL", "BRA", "CHL", "COL", "ECU", "PER", "PRY", "URY", "VEN") #"GUF",
 
 aoi <- ne_countries(return = 'sf') %>% filter(iso_a3 %in% iso)
 ```
@@ -66,7 +67,7 @@ leaflet() %>%
 
 # Documentos de referência
 
-Após recebimento dos dados, eles são publicados em [três formatos/estágios](http://addressforall.org/dados):
+Após recebimento dos dados, eles são publicados em [três formatos](http://addressforall.org/dados):
 
 - Dados preservados
 
@@ -95,6 +96,26 @@ O [dicionário de dados](https://github.com/digital-guard/preserv/blob/main/docs
 
 A política de licenças adotada pelo Instituto foi detalhada [neste repositório](https://github.com/digital-guard/licenses).
 
+## Prospecção
+
+```{r}
+donor %>%
+  group_by(donor_status) %>%
+  tally() %>%
+  arrange(desc(donor_status)) %>%
+  mutate(donor_status = case_when(donor_status == 0 ~ "Donors contacted",
+                                  donor_status == 1 ~ "Donors interested in collaborating",
+                                  donor_status == 2 ~ "Donated pack received",
+                                  donor_status == 3 ~ "Donated pack published"),
+         n = cumsum(n)) %>%
+  ggplot() +
+  geom_col(aes(x = n, y = donor_status)) +
+  geom_text(aes(x = n, y = donor_status, label = n), position=position_stack(vjust=0.5), col = "white") +
+  xlab("Number of donors") +
+  ylab("") +
+  theme_bw()
+```
+
 ## Dados preservados
 
 **`r length(volume$pack_id)` layers** já foram preservados, recebidas de **`r length(unique(volume$legalname))` doadores**
@@ -111,6 +132,9 @@ ggplot(data = volume %>% group_by(ftname_class) %>% count() %>% mutate(col = if_
 
 ```{r}
 volume %>%
+  group_by(pack_id) %>%
+  slice(1) %>%
+  ungroup() %>%
   mutate(new_date = floor_date(accepted_date, unit = "month")) %>%
   group_by(new_date) %>%
   count() %>% 
@@ -120,7 +144,7 @@ volume %>%
   ggplot() +
   geom_area(aes(x = new_date, y = n, fill = "gray50"), show.legend = FALSE) +
   scale_fill_manual(values = c("gray50")) +
-  xlab("Date") + ylab("Layers") +
+  xlab("Date") + ylab("Donated packages") +
   theme_bw()
 ```
 
@@ -153,7 +177,7 @@ volume %>%
 
 Ainda não está em operação.
 
-## Pacotes doados para consulta - apenas dados completos/full (ver dicionário de dados)
+## Layers doadas para consulta - apenas dados completos/full (ver dicionário de dados)
 
 ```{r}
 #| column: page
