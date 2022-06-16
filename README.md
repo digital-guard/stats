@@ -1,7 +1,9 @@
-# Organização
+# A4A Reports
 
 docs:
 
-- [Relatório estatístico](https://digital-guard.github.io/stats/docs/stats-report)
+pt:
 
-- [Relatório interno](https://digital-guard.github.io/stats/docs/internal-report)
+- [Relatório público](https://digital-guard.github.io/stats/docs/pt/report-public)
+
+- [Relatório interno](https://digital-guard.github.io/stats/docs/pt/report-internal)
