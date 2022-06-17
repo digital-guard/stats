@@ -47,9 +47,12 @@ aoi <- ne_countries(return = 'sf') %>% filter(iso_a3 %in% iso)
 
 Os endereços são parte fundamental da infraestrutura física-territorial de um país. Eles são essenciais para a provisão de serviços básicos (eletricidade, água, correio), no planejamento e implementação de políticas públicas e no desenvolvimento do setor privado.
 
-O Instituto AddressForAll já atua em **`r length(iso)` países** da América Latina por meio do Projeto Digital Guard. **`r length(unique(volume$donor_id))` doadores** contribuíram para a plataforma de dados.
+<img align="center" src="../_assets/AML-parceiros2022.png">
 
-```{r}
+O Instituto AddressForAll já atua em **`r length(iso)` países** da América Latina por meio do Projeto Digital Guard. **`r length(unique(volume$donor_id))` doadores** [contribuíram para a plataforma de dados](https://addressforall.org/teste2/).
+
+<!--
+{r}
 # mapa da área de atuação
 leaflet() %>%
   addTiles() %>%
@@ -63,19 +66,23 @@ leaflet() %>%
               #                                    bringToFront = FALSE)
               )
 
-```
+-->
 
-# Documentos de referência
+# Metodologia A4A
 
-Após recebimento dos dados, eles são publicados em [três formatos](http://addressforall.org/dados):
+A prospecção de potenciais doadores inicia por uma cuidadosa curadoria, formalizada em sistema de CRM. Os potenciais contatos são verificados um a um, por e-mail e telefone. Seguem-se então alguns passos para se conquistar doadores e seus pacotes de dados livres:
 
-- Dados preservados
+<img align="center" src="../_assets/A4A_method-funilDoacoes2022-06.png">
 
-- Dados filtrados
+1. quando um dos contatos do CRM é confirmado e concorda em dialogar, contabilizamos como "potencial doador contatado";
 
-- Dados consolidados
+2. alguns dos contatados são convencidos a doar e arquivos de dados (mesmo que ruins contabilizamos como "com dados");
 
-O [dicionário de dados](https://github.com/digital-guard/preserv/blob/main/docs/pt/ftypes.md) descreve quais tipos de layer são adicionadas à plataforma de dados atualmente.
+3. por fim analisamos, pedimos mais dados e aceitamos, a entrega do doador vira "pacote doado" (exemplos brasileiro de [metadados de pacotes](https://github.com/digital-guard/preserv-BR)).
+
+Apesar de cada pacote conter dados de interesse da AddressForAll, o doador é livre para entregar seus dados oficiais misturados a outros dados, e no formato desejado. A equipe técnica efetua então um **recorte** sobre os dados originais, elegendo um ou mais *layers* para esse recorte, e então reestruturando e **filtrando** os dados dos *layers*, para que fiquem todos em um só padrão. Os dados originais são preservados por **20 anos**, e os procedimentos de recorte e a filtragem são públicos e reprodutíveis.
+
+O [dicionário de dados](https://github.com/digital-guard/preserv/blob/main/docs/pt/ftypes.md) descreve quais tipos de *layer* são adicionadas à plataforma de **dados filtrados** atualmente.
 
 <p><i>Layers</i> contendo o endereço:
 <ul style="list-style-type:none;" dir="auto">
@@ -137,7 +144,7 @@ volume %>%
   ungroup() %>%
   mutate(new_date = floor_date(accepted_date, unit = "month")) %>%
   group_by(new_date) %>%
-  count() %>% 
+  count() %>%
   ungroup() %>%
   mutate(n = cumsum(n)) %>%
   filter(new_date > "2000-01-01") %>%
@@ -182,7 +189,7 @@ Ainda não está em operação.
 ```{r}
 #| column: page
 
-volume %>% 
+volume %>%
   mutate(license_family = as_factor(license_family),
          license_type = as_factor(license_type),
          ftname_class = as_factor(ftname_class)) %>%
@@ -191,7 +198,7 @@ volume %>%
   mutate(quantidade_feicoes_bruta = format(quantidade_feicoes_bruta, big.mark = ".")) %>%
   setNames(c("Jurisdiction", "Donor", "Layer", "# of features", "License family", "License type")) %>%
   arrange(`Jurisdiction`) %>%
-  datatable(class = 'compact hover nowrap order-column row-border', 
+  datatable(class = 'compact hover nowrap order-column row-border',
           rownames = FALSE,
           filter = "top")
 ```
